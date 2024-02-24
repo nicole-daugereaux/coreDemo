@@ -7,16 +7,17 @@
 # Imports that are good to use
 ###################################################################
 from appium import webdriver
-import requests
+from appium.options.ios import XCUITestOptions
+from appium.options.android import UiAutomator2Options
+from appium.webdriver.common.appiumby import AppiumBy
+import multiprocessing
 from time import sleep
 import os
 import urllib3
-import multiprocessing
 import json
 import random
 import sys
 from colorama import Fore, Back, Style
-
 
 ###################################################################
 # This makes the functions below execute 'run' amount of times
@@ -30,7 +31,7 @@ def run_sauce_test():
     androidTest = True
     iosTest = False
     useApp = False
-    appLocation = 'storage:fe971d04-a830-4554-a50c-162ef002935c'
+    appLocation = 'storage:186331eb-fffd-4f25-900a-7cbb8f9b6b7f'
     # appLocation = 'storage:filename=NetworkSpeed 2.zip'
 
     ###################################################################
@@ -47,9 +48,6 @@ def run_sauce_test():
     # pokemon_names_url = urllib3.PoolManager().request('GET', 'https://raw.githubusercontent.com/sindresorhus/pokemon/master/data/en.json')
     # pokemon_names = json.loads(pokemon_names_url.data.decode('utf-8'))
     # random_pokemon = random.choice(pokemon_names)
-    superhero_names_url = urllib3.PoolManager().request('GET', 'https://raw.githubusercontent.com/sindresorhus/superheroes/main/superheroes.json')
-    superhero_names = json.loads(superhero_names_url.data.decode('utf-8'))
-    random_superhero = random.choice(superhero_names)
 
     ###################################################################
     # Choose if you want Android of iOS capabilities
@@ -66,55 +64,54 @@ def run_sauce_test():
     region = 'US'
 
     ###################################################################
-    # Common parameters (desired capabilities)
+    # Common parameters (capabilities)
     ###################################################################
     projectParameters = {
-        # 'tags':['Case', 'Investigation',],
-        # The following are not required
-        # ''tunnelIdentifier': 'exampletunnel'
-        # 'app': 'storage:610f9e00-9415-44a2-94f1-a1f418663cd3',
-        # 'app': 'storage:8a8b7702-f4fb-4788-93fa-8a8a3e631c74',
+
         }
 
     androidParameters = {
-        'browserName': 'Chrome',
-        'platformName': 'Android',
-        # 'platformVersion': '10',
-        # 'deviceName': 'Google.*',
-        'name': 'Android Device Smoke Test',
-        # 'name': random_superhero,
-        'extendedDebugging': True,
+            'browserName': 'Chrome',
+            'platformName': 'Android',
+            # 'appium:platformVersion': '11',
+            'appium:automationName': 'UiAutomator2',
+            # 'phoneOnly': 'true',
+            # 'appium:deviceName' : 'Samsung.*Galaxy.*',
+            # 'deviceName' : 'Samsung Galaxy S10\+',
+            # 'deviceName' : '(Samsung.*)|(Huawei.*)|(Xiaomi.*)|(OnePlus.*)|(Google.*)',
+            # 'deviceName' : 'Google Pixel 3 .*',
+            # 'appium:orientation' : 'PORTRAIT',
+            # 'platformName' : 'Android',
+            # 'browserName' : 'Chrome',
+            # 'platformVersion' : '11',
+            # 'otherApps': 'storage:5471e3e8-5be6-48f7-8968-47ffc574b2f6',
+            # 'appiumVersion': '1.14.0',
+            # 'deviceOrientation': 'portrait',
+            'sauce:options':{
+                'name': 'Android Smoke Test',
+                'appiumVersion': '2.0.0',
 
-        # 'phoneOnly': 'true',
-        # Define Android parameters here
-        # 'deviceName' : 'Google.*',
-        # 'deviceName' : 'Samsung Galaxy S10\+',
-        # 'deviceName' : '(Samsung.*)|(Huawei.*)|(Xiaomi.*)|(OnePlus.*)|(Google.*)',
-        # 'deviceName' : 'Google Pixel 3 .*',
-        # 'orientation' : 'LANDSCAPE',
-        # 'platformName' : 'Android',
-        # 'browserName' : 'Chrome',
-        # 'platformVersion' : '11',
-        # 'otherApps': 'storage:5471e3e8-5be6-48f7-8968-47ffc574b2f6',
-        # 'appiumVersion': '1.14.0',
-        # 'deviceOrientation': 'portrait',
+                # 'tags':['Case', 'Investigation',],
+                # ''tunnelIdentifier': 'exampletunnel'
+                }
     }
 
     iosParameters = { # Define iOS Parameters here
-        # 'deviceName' : 'iPhone [6-8]',
-        'deviceName' : 'iPhone 12 Pro Max',
-        'platformVersion' : '13',
+        'deviceName' : 'iPhone.*',
+        # 'deviceName' : 'iPhone 12 Pro Max',
+        # 'platformVersion' : '16',
         'platformName' : 'iOS',
-        'automationName' : 'XCUITest',
-        'tabletOnly': 'true',
-        # 'extendeDebugging': True,
-
+        # 'automationName' : 'XCUITest',
+        # 'tabletOnly': 'true',
         # 'phoneOnly': 'true',
-        'name': 'appium 1.22.0 test',
-        'appiumVersion': '1.22.0',
+        'name': 'automated native app test',
+        'sauce:options':{
+            'name': 'Automated Native App Example'
+        },
+        # 'appiumVersion': '1.22.0',
         # 'autoDismissAlerts': 'true',
         # 'connectHardWareKeyboard' : 'true',
-        'browserName' : 'safari',
+        # 'browserName' : 'safari',
         # 'newCommandTimeout' : '0',
         # 'nativeWebTap': 'true',
     }
@@ -160,34 +157,44 @@ def run_sauce_test():
     if region != 'EU':
         print(Fore.MAGENTA + 'You are using the US data center for an RDC test, so a bald eagle is obviously running your tests.' + Style.RESET_ALL)
         driver = webdriver.Remote(
-            # command_executor='https://oauth-hardik-f4926:b88b2d30-ad96-4264-a7de-fcf6cf2de204@ondemand.us-west-1.saucelabs.com:443/wd/hub',
             command_executor='https://'+os.environ['SAUCE_USERNAME']+':'+os.environ['SAUCE_ACCESS_KEY']+'@ondemand.us-west-1.saucelabs.com:443/wd/hub',
             desired_capabilities=sauceParameters)
     elif region == 'EU':
         print (Fore.CYAN + 'You are using the EU data center for an RDC test, you beautiful tropical fish!' + Style.RESET_ALL)
         driver = webdriver.Remote(
             command_executor='https://'+os.environ['SAUCE_USERNAME']+':'+os.environ['SAUCE_ACCESS_KEY']+'@ondemand.eu-central-1.saucelabs.com:443/wd/hub',
-            desired_capabilities=sauceParameters)
+             desired_capabilities=sauceParameters)
 
     ###################################################################
     # Test logic goes here
     ###################################################################
+    # backpack = driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Sauce Labs Backpack")
+    # backpack.click()
+    # sleep(2)
+    # addToCart = driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Add To Cart button")
+    # addToCart.click()
+    # sleep(2)
+    # cart = driver.find_element(AppiumBy.ACCESSIBILITY_ID, "tab bar option cart")
+    # cart.click()
     # # # Navigating to a website
     # driver.get_window_size()
     driver.get('https://www.google.com')
-    # # #
-    # # # # Finding an element
-    interact = driver.find_element_by_xpath('//input[@name="q"]')
-    # # sleep(3)
-    #
+    # # # ## driver.get('https://www.google.com')
+
+    # #
+    # # # Finding an element
+    interact = driver.find_element(AppiumBy.CSS_SELECTOR, '.gLFyf') #APjFqb
+    # by=AppiumBy.XPATH, value='//*[@text="Battery"]'
+     # self.execute(RemoteCommand.FIND_ELEMENT, {'using': by, 'value': value})
+    sleep(3)
+
     # #
     # # # # Using the selected element
     interact.send_keys('puppies')
     driver.press_keycode(66)
-    # # interact.click()
 
-    # # # Saving an extra screenshot
-    driver.save_screenshot('screenshot.png')
+    # # # # Saving an extra screenshot
+    # driver.save_screenshot('screenshot.png')
     # #
     # # # Using Action chains
     # # # ActionChains(driver).move_to_element(interact).perform()
@@ -202,12 +209,6 @@ def run_sauce_test():
     #
     # # Ending the test session
     driver.quit()
-
-
-###################################################################
-# This is the command to use multiprocessing to run the desired
-# amount of times
-###################################################################
 if __name__ == '__main__':
     jobs = [] # Array for the jobs
     for i in range(run): # Run the amount of times set above
